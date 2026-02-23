@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Student Feedback</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+        }
+
+        input,
+        textarea {
+            padding: 5px;
+            margin: 5px;
+        }
+
+        .feedback-item {
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .even {
+            background-color: #f2f2f2;
+        }
+
+        .odd {
+            background-color: #d9edf7;
+        }
+
+        .highlight {
+            border: 2px solid blue;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Student Feedback Form</h2>
+
+    <form id="feedbackForm">
+        {% csrf_token %}
+        Name: <input type="text" id="name" name="name"><br>
+        Feedback: <textarea id="message" name="message"></textarea><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <hr>
+
+    <h3>Submitted Feedback</h3>
+    <div id="feedbackList">
+        {% for f in feedbacks %}
+        <div class="feedback-item {% cycle 'even' 'odd' %}">
+            <strong>{{ f.name }}</strong>: {{ f.message }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        $(document).ready(function () {
+
+            // Highlight input fields on focus
+            $("input, textarea").focus(function () {
+                $(this).addClass("highlight");
+            }).blur(function () {
+                $(this).removeClass("highlight");
+            });
+
+            // AJAX form submission
+            $("#feedbackForm").submit(function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: "/submit/",
+                    type: "POST",
+                    data: {
+                        name: $("#name").val(),
+                        message: $("#message").val(),
+                        csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val()
+                    },
+                    success: function (response) {
+                        var count = $("#feedbackList .feedback-item").length;
+                        var bgClass = (count % 2 === 0) ? "even" : "odd";
+
+                        $("#feedbackList").append(
+                            "<div class='feedback-item " + bgClass + "'>" +
+                            "<strong>" + response.name + "</strong>: " +
+                            response.message +
+                            "</div>"
+                        );
+
+                        $("#feedbackForm")[0].reset();
+
+                        // Fade effect
+                        $(".feedback-item").last().hide().fadeIn(500);
+                    }
+                });
+            });
+
+        });
+    </script>
+
+</body>
+
+</html>
